@@ -4,37 +4,51 @@ use std::io::{TcpListener, TcpStream};
 use std::io::{Acceptor, Listener};
 
 
-fn main() {  
+fn main() {
+    let mut timer = Timer::new().unwrap();    
+    start_server();
+    timer.sleep(Duration::milliseconds(500));
+    start_client();
+}
+
+
+fn start_server() {
     spawn(proc() {
-        let listener = TcpListener::bind("127.0.0.1", 8001);
-
-        // bind the listener to the specified address
+        let listener = TcpListener::bind("127.0.0.1", 8000);
         let mut acceptor = listener.listen();
-
-        // accept connections and process them, spawning a new tasks for each one
         for stream in acceptor.incoming() {
             match stream {
-                Err(e) => {
-                    println!("{}", e);
-                }
                 Ok(stream) => spawn(proc() {
-                })
+                    handle_client(stream)
+                }),
+                Err(error) => {
+                    println!("{}", error);
+                }
             }
         }
 
-        // close the socket server
         drop(acceptor);
     });
-
-    spawn(proc() {
-        let mut timer = Timer::new().unwrap();
-        timer.sleep(Duration::milliseconds(400));
-        let mut socket = TcpStream::connect("127.0.0.1", 8001);
-        loop {
-            let response = socket.read_to_end();
-            println!("{}", response);
-            timer.sleep(Duration::milliseconds(300));
-        }
-    });
-
 }
+
+
+fn handle_client(mut stream:TcpStream) {
+    stream.write(b"echo");
+}
+
+
+fn start_client() {
+    spawn(proc() {
+        let mut socket = TcpStream::connect("127.0.0.1", 8000);
+        let response = socket.read_to_end();
+        match response {
+            Ok(value) => {
+                println!("{}", String::from_utf8(value));
+            },
+            Err(error) => {
+                println!("{}", error);
+            }
+        };
+    });
+}
+
