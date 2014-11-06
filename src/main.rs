@@ -7,7 +7,8 @@ use std::io::{Acceptor, Listener};
 fn main() {
     let mut timer = Timer::new().unwrap();    
     start_server();
-    timer.sleep(Duration::milliseconds(500));
+    // TODO: The following line depends on time, which is bad.
+    timer.sleep(Duration::milliseconds(1000));
     start_client();
 }
 
@@ -33,7 +34,9 @@ fn start_server() {
 
 
 fn handle_client(mut stream:TcpStream) {
-    stream.write(b"echo");
+    for _ in range(0i, 10i) {
+        stream.write_line("echo");
+    }
 }
 
 
